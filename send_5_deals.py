@@ -39,19 +39,15 @@ deals = [
     }
 ]
 
-# Send each deal
-for i, deal in enumerate(deals, 1):
-    try:
-        msg = f"*{deal['title']}*\n\n🔗 [Buy Now]({deal['link']})"
-        payload = {
-            "chat_id": CHANNEL_ID,
-            "caption": msg,
-            "photo": deal["image"],
-            "parse_mode": "Markdown"
-        }
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
-        r = requests.post(url, data=payload)
-        print(f"✅ ({i}) Sent → Status: {r.status_code}")
-        time.sleep(1)  # small delay
-    except Exception as e:
-        print(f"❌ Error sending deal {i}:", e)
+for deal in deals:
+    msg = f"*{deal['title']}*\n\n🔗 [Buy Now]({deal['link']})"
+    payload = {
+        "chat_id": CHANNEL_ID,
+        "caption": msg,
+        "photo": deal["image"],
+        "parse_mode": "Markdown"
+    }
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+    r = requests.post(url, data=payload)
+    print(f"📤 Sent: {deal['title']} → Status: {r.status_code}")
+    time.sleep(2)  # ✅ wait 2 seconds before sending next
