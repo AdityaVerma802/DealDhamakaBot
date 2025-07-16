@@ -17,18 +17,16 @@ def get_latest_deals():
     try:
         response = requests.get(url, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
-        articles = soup.select(".views-row")[:3]
-        print(f"🛍️ Found {len(articles)} posts")
+        articles = soup.select("div.views-row")[:3]  # limit to top 3 deals
 
         deals = []
         for post in articles:
             title_tag = post.select_one(".field-content a")
             img_tag = post.select_one("img")
             title = title_tag.text.strip()
-            link = title_tag['href']
+            link = "https://www.indiadesire.com" + title_tag['href']
             image = img_tag['src'] if img_tag else None
-            full_link = f"https://www.indiadesire.com{link}"
-            msg = f"🔥 *{title}*\n\n🔗 [View Deal]({full_link})"
+            msg = f"🔥 *{title}*\n\n🔗 [Buy Now]({link})"
             deals.append((msg, image))
         return deals
     except Exception as e:
