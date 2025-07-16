@@ -1,0 +1,25 @@
+name: Send 5 Sample Deals
+
+on:
+  workflow_dispatch:
+
+jobs:
+  send-deals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.3'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+        run: python send_5_deals.py
