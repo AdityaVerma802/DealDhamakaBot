@@ -1,9 +1,6 @@
 import os
-from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
-
-load_dotenv()
 
 print("✅ Bot started")
 
@@ -15,41 +12,57 @@ if not TELEGRAM_TOKEN or not CHANNEL_ID:
     exit(1)
 
 def get_latest_deals():
-    url = "https://www.indiadesideals.in/"
+    url = "https://www.desidime.com/groups/loot-deals"
     print(f"🔗 Scraping {url}")
     try:
-        response = requests.get(url, timeout=10)
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
-        articles = soup.select("div.blog-posts .post-outer")[:3]
-        print(f"🛍️ Found {len(articles)} posts")
-
         deals = []
-        for post in articles:
-            title_tag = post.select_one(".entry-title a")
-            img_tag = post.select_one("img")
-            title = title_tag.text.strip()
-            link = title_tag['href']
-            image = img_tag['src'] if img_tag else None
-            msg = f"🔥 *{title}*\n\n🔗 [Buy Now]({link})"
-            deals.append((msg, image))
+
+        posts = soup.select("div[data-controller='post-list'] article")[:3]
+        print(f"🛍️ Found {len(posts)} loot deals")
+
+        for post in posts:
+            title_tag = post.select_one("h1 a, h2 a")
+            link = "https://www.desidime.com" + title_tag.get("href", "") if title_tag else ""
+            title = title_tag.get_text(strip=True) if title_tag else "No title"
+
+            image_tag = post.select_one("img")
+            image_url = image_tag.get("src") if image_tag else None
+
+            message = f"🔥 *{title}*\n\n🔗 [View Deal]({link})"
+            deals.append((message, image_url))
+
         return deals
     except Exception as e:
         print("❌ Error fetching deals:", e)
         return []
 
-def send_to_telegram(message, image_url):
+def send_to_telegram(message, image_url=None):
     try:
-        payload = {
-            "chat_id": CHANNEL_ID,
-            "caption": message,
-            "photo": image_url,
-            "parse_mode": "Markdown"
-        }
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+        if image_url:
+            payload = {
+                "chat_id": CHANNEL_ID,
+                "caption": message,
+                "photo": image_url,
+                "parse_mode": "Markdown"
+            }
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+        else:
+            payload = {
+                "chat_id": CHANNEL_ID,
+                "text": message,
+                "parse_mode": "Markdown"
+            }
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+
         r = requests.post(url, data=payload)
         print("📤 Sent to Telegram:", r.status_code, r.text)
     except Exception as e:
-        print("❌ Error sending message:", e)
+        print("❌ Error sending to Telegram:", e)
 
 def main():
     deals = get_latest_deals()
