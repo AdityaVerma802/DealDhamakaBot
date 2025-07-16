@@ -2,7 +2,7 @@ import os
 import requests
 import time
 
-print("✅ Starting...")
+print("✅ Starting Deal Sender...")
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL")
@@ -39,15 +39,35 @@ deals = [
     }
 ]
 
-for deal in deals:
-    msg = f"*{deal['title']}*\n\n🔗 [Buy Now]({deal['link']})"
+def send_photo_or_text(msg, image_url):
+    photo_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+    text_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+
+    # Send Photo
     payload = {
         "chat_id": CHANNEL_ID,
         "caption": msg,
-        "photo": deal["image"],
+        "photo": image_url,
         "parse_mode": "Markdown"
     }
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
-    r = requests.post(url, data=payload)
-    print(f"📤 Sent: {deal['title']} → Status: {r.status_code}")
-    time.sleep(2)  # ✅ wait 2 seconds before sending next
+    response = requests.post(photo_url, data=payload)
+
+    if response.status_code != 200:
+        print(f"⚠️ Failed to send image. Sending text instead. Status: {response.status_code}")
+        # Send text fallback
+        payload = {
+            "chat_id": CHANNEL_ID,
+            "text": msg,
+            "parse_mode": "Markdown"
+        }
+        r = requests.post(text_url, data=payload)
+        print(f"📨 Text fallback sent. Status: {r.status_code}")
+    else:
+        print("✅ Photo sent successfully.")
+
+# Loop to send all deals
+for deal in deals:
+    msg = f"*{deal['title']}*\n\n🔗 [Buy Now]({deal['link']})"
+    print(f"➡️ Sending: {deal['title']}")
+    send_photo_or_text(msg, deal["image"])
+    time.sleep(3)  # wait 3 seconds to avoid Telegram limits
